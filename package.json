@@ -1,0 +1,19 @@
+{
+  "name": "myshop",
+  "version": "1.0.0",
+  "description": "MERN Shopping cart app",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KalAcademy/MyShopC17.git"
+  },
+  "author": "Kal Academy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KalAcademy/MyShopC17/issues"
+  },
+  "homepage": "https://github.com/KalAcademy/MyShopC17#readme"
+}
