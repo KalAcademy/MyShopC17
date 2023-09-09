@@ -1,28 +1,35 @@
-import React, {useEffect, useState} from 'react'
-import { useParams, Link } from 'react-router-dom'
+import React, {useEffect} from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import {Row, Col, Image, Card, Button, ListGroup} from 'react-bootstrap'
-import axios from 'axios'
 import Rating from '../components/Rating';
+import { listProductDetails } from '../actions/productActions';
+import Loader from '../components/Loader'
+import Message from '../components/Message'
 
 const ProductScreen = () => {
   const params = useParams();
-  const [product, setProduct] = useState({})
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+
+  const productDetails = useSelector((state) => state.productDetails)
+  const {loading, error, product} = productDetails
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      const {data} = await axios.get(`/api/products/${params.id}`)
-      setProduct(data)
-    }
-
-    fetchProduct()
-  })
+    dispatch(listProductDetails(params.id))
+  }, [dispatch, params])
  
+  const addToCartHandler = () => {
+    navigate(`/cart/${params.id}?qty=${qty}`)
+  }
   return (
     <>
       <Link className='btn btn-light my-3' to='/'>
         Go Back
       </Link>  
-      <Row>
+      {
+          loading ? (<Loader />) 
+            : error ? (<Message variant='danger'>{error}</Message>) : (<Row>
         <Col md={6}>
           <Image src={product.image} alt={product.name} fluid />
         </Col> 
@@ -66,6 +73,7 @@ const ProductScreen = () => {
                   className='btn-block'
                   type='button'
                   disabled={product.countInStock === 0}
+                  onClick={addToCartHandler}
                 >
                   Add To Cart
                 </Button>
@@ -73,7 +81,11 @@ const ProductScreen = () => {
             </ListGroup>
           </Card>
         </Col>                     
-      </Row>  
+      </Row>  )
+
+      }
+
+      
     </>
   )
 }
