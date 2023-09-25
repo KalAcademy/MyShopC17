@@ -8,8 +8,18 @@ import {
   ORDER_DETAILS_REQUEST, 
   ORDER_PAY_FAIL,
   ORDER_PAY_SUCCESS,
-  ORDER_PAY_REQUEST, 
+  ORDER_PAY_REQUEST,
+  PAYPAL_KEY, 
 } from '../constants/orderConstants'
+
+export const getPaypalKey = () => async (dispatch) => {
+    const { data: clientId } = await axios.get('/api/config/paypal')
+
+    dispatch({
+      type: PAYPAL_KEY,
+      payload: clientId
+    })
+}
 
 export const createOrder = (order) => async (dispatch, getState) => {
   try {

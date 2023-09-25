@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from 'react'
-import axios from 'axios'
+import React, { useEffect } from 'react'
 import { Link, useParams,  } from 'react-router-dom'
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import { Button, Row, Col, ListGroup, Image, Card } from 'react-bootstrap'
+import { Row, Col, ListGroup, Image, Card } from 'react-bootstrap'
 import { useDispatch, useSelector } from 'react-redux'
 import Message from '../components/Message'
 import Loader from '../components/Loader'
-import { getOrderDetails, payOrder } from '../actions/orderActions'
+import { getOrderDetails, getPaypalKey, payOrder } from '../actions/orderActions'
 import { ORDER_PAY_RESET } from '../constants/orderConstants'
 
 const OrderScreen = () => {
-  const [client_Id, setClientID] = useState('')
   const params = useParams();
   const orderId = params.id
 
@@ -19,8 +17,9 @@ const OrderScreen = () => {
   const orderDetails = useSelector((state) => state.orderDetails)
   const { order, loading, error } = orderDetails
 
+  let updatedOrder = {}
   const orderPay = useSelector((state) => state.orderPay)
-  const { loading: loadingPay, success: successPay } = orderPay
+  const { loading: loadingPay, success: successPay, paypalkey } = orderPay
 
   if (!loading) {
     //   Calculate prices
@@ -28,33 +27,19 @@ const OrderScreen = () => {
       return (Math.round(num * 100) / 100).toFixed(2)
     }
 
-    order.itemsPrice = addDecimals(
+    updatedOrder.itemsPrice = addDecimals(
       order.orderItems.reduce((acc, item) => acc + item.price * item.qty, 0)
     )
   }
 
   useEffect(() => {
-    const addPayPalScript = async () => {
-      const { data: clientId } = await axios.get('/api/config/paypal')
-      console.log(clientId)
-      setClientID(clientId)
-      console.log(client_Id)
-    }
+    dispatch(getPaypalKey())
 
     if (!order || successPay) {
       dispatch({ type: ORDER_PAY_RESET })
       dispatch(getOrderDetails(orderId))
-    }else if (!order.isPaid) {
-      addPayPalScript()
-     
     }
-  }, [dispatch, orderId, successPay, order, setClientID])
-
-  const successPaymentHandler = (paymentResult) => {
-    console.log(paymentResult)
-    dispatch(payOrder(orderId, paymentResult))
-  } 
-
+  }, [dispatch, orderId, successPay, order])
 
   return loading ? (
     <Loader />
@@ -145,7 +130,7 @@ const OrderScreen = () => {
               <ListGroup.Item>
                 <Row>
                   <Col>Items</Col>
-                  <Col>${order.itemsPrice}</Col>
+                  <Col>${updatedOrder.itemsPrice}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
@@ -169,7 +154,7 @@ const OrderScreen = () => {
               {!order.isPaid && (
                 <ListGroup.Item>
                   {loadingPay && <Loader />}
-                    <PayPalScriptProvider options={{ "client-id": "AU3oneM1xU0sufhCmoXx-jhH9sVGpWNq7BPsK4lAw1B_q_t0TsisV_jCg2tTOibt3Bo_vxxLva11_0yA",
+                    <PayPalScriptProvider options={{ "client-id": paypalkey,
                     components: "buttons",
                     currency: "USD" }}>
                         <PayPalButtons 
@@ -194,8 +179,13 @@ const OrderScreen = () => {
                 onApprove={function (data, actions) {
                     return actions.order.capture().then(function () {
                         // Your code here after capture the order
-                        console.log(data)
-    //dispatch(payOrder(orderId, paymentResult))
+                        var paymentResult = {
+                          id: data.paymentID,
+                          status: 'Paid',
+                          update_time: new Date().getDate().toString(),
+                          email_address: order.user.email
+                        }
+                        dispatch(payOrder(orderId, paymentResult))
                     });
                 }}
                         />
